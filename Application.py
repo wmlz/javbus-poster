@@ -30,14 +30,14 @@ def getImg(html):
 def getCode(path):
     codes = []
     for dirpath, dirs, files in os.walk(path):
-        # logging.info(files)
+        # logger.info(files)
         for filename in files:
             if os.path.splitext(filename)[1] in suffixs:
                 codes.append(os.path.splitext(filename)[0])
         # for dir in dirs:
         #     codes.append(dir)
-    logging.info('共扫描到以下' + str(len(codes)) + '个番号：')
-    logging.info(codes)
+    logger.info('共扫描到以下' + str(len(codes)) + '个番号：')
+    logger.info(codes)
     return codes
 
 
@@ -47,7 +47,7 @@ def download(code):
     try:
         html = getHtml(javurl + '/' + code)
     except urllib.error.HTTPError as reason:
-        logging.error(str(code) + ' 不存在')
+        logger.error(str(code) + ': javbus找不到此番号')
 
     if html is not None:
         html = html.decode('UTF-8')
@@ -59,9 +59,9 @@ def download(code):
                                       'Opera/9.80 (Android 2.3.4; Linux; Opera Mobi/build-1107180945; U; en-GB) Presto/2.8.149 Version/11.10')]
                 urllib.request.install_opener(opener)
                 urllib.request.urlretrieve(imgPath, destdir + '/' + code + '.jpg')
-                logging.info(code + '.jpg 下载成功')
+                logger.info(code + '.jpg 下载成功')
             except urllib.error.HTTPError as reason:
-                logging.error(code + '找不到')
+                logger.error(code + '找不到')
 
 
 class myThread(threading.Thread):
@@ -79,15 +79,26 @@ class myThread(threading.Thread):
 
 
 if __name__ == '__main__':
-    LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
-    logging.basicConfig(filename='my.log', level=logging.DEBUG, format=LOG_FORMAT)
+    logger = logging.getLogger('Leung')
+    logger.setLevel(logging.DEBUG)
+
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    ch.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(filename)s[:%(lineno)d] - %(message)s"))
+
+    sh = logging.FileHandler(r'./javbus-poster.log')
+    sh.setLevel(logging.DEBUG)
+    sh.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(filename)s[:%(lineno)d] - %(message)s"))
+
+    logger.addHandler(ch)
+    logger.addHandler(sh)
 
     cp = configparser.ConfigParser()
     cp.read('./config.cfg', 'gbk')
     cfgitems = cp.items('default')
-    logging.info('配置如下：')
+    logger.info('配置如下：')
     for item in cfgitems:
-        logging.info(item[0] + ': ' + item[1])
+        logger.info(item[0] + ': ' + item[1])
 
     srcdir = cp.get('default', 'srcdir')
     destdir = cp.get('default', 'destdir')
